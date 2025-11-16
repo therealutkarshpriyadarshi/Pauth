@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Development environment with all tools
+  pauth-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: pauth-dev
+    image: pauth:dev
+    volumes:
+      - .:/app
+      - pauth-poetry-cache:/root/.cache/pypoetry
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=development
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    networks:
+      - pauth-network
+
+  # Production/Runtime environment
+  pauth-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: pauth-prod
+    image: pauth:prod
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=production
+    networks:
+      - pauth-network
+    restart: unless-stopped
+
+  # Testing environment
+  pauth-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    container_name: pauth-test
+    image: pauth:test
+    volumes:
+      - .:/app
+      - pauth-poetry-cache:/root/.cache/pypoetry
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=testing
+    command: poetry run pytest -v --cov=src --cov-report=term-missing --cov-report=html
+    networks:
+      - pauth-network
+
+  # OAuth Playground - Interactive testing environment
+  pauth-playground:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: playground
+    container_name: pauth-playground
+    image: pauth:playground
+    volumes:
+      - .:/app
+      - pauth-playground-data:/app/data
+    ports:
+      - "5000:5000"
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=playground
+      - FLASK_ENV=development
+    stdin_open: true
+    tty: true
+    networks:
+      - pauth-network
+    restart: unless-stopped
+
+  # Flask Example Application
+  pauth-flask-example:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: pauth-flask-example
+    image: pauth:flask
+    volumes:
+      - .:/app
+    ports:
+      - "5001:5000"
+    environment:
+      - PYTHONPATH=/app/src
+      - FLASK_APP=src/examples/flask_example.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+    command: python -m src.examples.flask_example
+    networks:
+      - pauth-network
+    restart: unless-stopped
+
+  # Security Scanner Service
+  pauth-security:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: pauth-security
+    image: pauth:security
+    volumes:
+      - .:/app
+      - pauth-security-reports:/app/reports
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=security
+    command: python -m src.examples.security_scanner_example
+    networks:
+      - pauth-network
+
+  # Analytics Dashboard Service
+  pauth-analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: pauth-analytics
+    image: pauth:analytics
+    volumes:
+      - .:/app
+      - pauth-analytics-data:/app/analytics
+    environment:
+      - PYTHONPATH=/app/src
+      - PAUTH_ENV=analytics
+    command: python -m src.examples.analytics_example
+    networks:
+      - pauth-network
+
+  # Documentation builder (if needed in future)
+  pauth-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: pauth-docs
+    image: pauth:docs
+    volumes:
+      - .:/app
+      - pauth-docs-build:/app/docs/_build
+    ports:
+      - "8080:8080"
+    environment:
+      - PYTHONPATH=/app/src
+    command: python -m http.server 8080
+    networks:
+      - pauth-network
+
+# Named volumes for persistent data
+volumes:
+  pauth-poetry-cache:
+    driver: local
+  pauth-playground-data:
+    driver: local
+  pauth-security-reports:
+    driver: local
+  pauth-analytics-data:
+    driver: local
+  pauth-docs-build:
+    driver: local
+
+# Network configuration
+networks:
+  pauth-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
