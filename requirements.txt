@@ -1,0 +1,25 @@
+# Core dependencies
+requests>=2.32.3
+
+# Async support (optional)
+aiohttp>=3.9.0
+
+# Development dependencies
+certifi>=2024.7.4
+charset-normalizer>=3.3.2
+idna>=3.7
+urllib3>=2.2.2
+
+# Optional dependencies for publishing
+twine>=5.1.1
+setuptools>=71.0.3
+wheel>=0.41.0
+
+# Documentation & UI
+Pygments>=2.18.0
+markdown-it-py>=3.0.0
+mdurl>=0.1.2
+rich>=13.7.1
+
+# OAuth Playground (optional)
+qrcode>=7.4.2
